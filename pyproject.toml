@@ -7,7 +7,16 @@ name = "name_gen"
 version = "0.1.0"
 description = "A name generator project"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "python-docx>=1.0",
+    "openpyxl>=3.0",
+]
+
+[project.scripts]
+name-gen = "name_gen.main:main"
+
+[tool.setuptools.package-data]
+name_gen = ["assets/*.xlsx"]
 
 [project.optional-dependencies]
 dev = [
