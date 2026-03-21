@@ -25,6 +25,8 @@ def _add_bold_run(paragraph, text: str, size: Pt) -> None:
     run = paragraph.add_run(text)
     run.bold = True
     run.font.size = size
+    run.font.name = "맑은 고딕"
+    run._element.rPr.rFonts.set(qn("w:eastAsia"), "맑은 고딕")
 
 
 def _format_name_text(entry: NameEntry) -> str:
@@ -138,10 +140,13 @@ def generate_docx(page: PageData, output_path: str) -> None:
     else:
         row_height = Emu(2937510)
 
-    # 길흉 텍스트 조회
-    happy_texts = {}
-    if page.suri_numbers and any(page.suri_numbers):
-        happy_texts = lookup_happy_numbers(page.suri_numbers)
+    # 이름별 길흉 텍스트 조회
+    happy_texts_list: list[dict[str, str]] = []
+    for suri_numbers in page.suri_numbers_list:
+        if suri_numbers and any(suri_numbers):
+            happy_texts_list.append(lookup_happy_numbers(suri_numbers))
+        else:
+            happy_texts_list.append({})
 
     # 테이블 생성 (보더 없음)
     table = doc.add_table(rows=name_count, cols=2)
@@ -175,7 +180,9 @@ def generate_docx(page: PageData, output_path: str) -> None:
 
         # 왼쪽 셀
         left_cell = row.cells[0]
-        _fill_left_cell(left_cell, entry, page.suri_numbers, happy_texts, font_size, is_first=(idx == 0), is_last=(idx == name_count - 1), name_count=name_count)
+        suri = page.suri_numbers_list[idx] if idx < len(page.suri_numbers_list) else [0, 0, 0, 0]
+        happy = happy_texts_list[idx] if idx < len(happy_texts_list) else {}
+        _fill_left_cell(left_cell, entry, suri, happy, font_size, is_first=(idx == 0), is_last=(idx == name_count - 1), name_count=name_count)
 
         # 오른쪽 셀: 빈 줄 1개 + placeholder
         right_cell = row.cells[1]

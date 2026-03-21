@@ -145,7 +145,7 @@ class NameGenApp:
             html = fetch_html(url)
             self.root.after(0, self._log, "HTML 가져오기 완료")
 
-            saju, pages = parse_html(html)
+            saju, pages, applicant = parse_html(html)
             self.root.after(0, self._log, f"총 {len(pages)}개 페이지 발견")
 
             if not pages:
@@ -153,9 +153,10 @@ class NameGenApp:
                 self.root.after(0, self._finish)
                 return
 
+            prefix = applicant if applicant else "result"
             success = 0
             for page in pages:
-                output_name = f"result{page.page_number}_{page.name_count}.docx"
+                output_name = f"{prefix}_{page.page_number}.docx"
                 output_path = os.path.join(self.output_dir, output_name)
 
                 generate_docx(page, output_path)

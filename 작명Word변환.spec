@@ -3,7 +3,7 @@
 
 a = Analysis(
     ['src/name_gen/main.py'],
-    pathex=[],
+    pathex=['src'],
     binaries=[],
     datas=[('src/name_gen/assets/happy_numbers.xlsx', 'name_gen/assets')],
     hiddenimports=['name_gen.parser', 'name_gen.word_writer'],
@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='작명Word변환',
+    name='name_gen',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -35,10 +35,4 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-)
-app = BUNDLE(
-    exe,
-    name='작명Word변환.app',
-    icon=None,
-    bundle_identifier=None,
 )

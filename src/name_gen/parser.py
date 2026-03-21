@@ -60,7 +60,7 @@ class PageData:
     page_number: int
     name_count: int
     names: list[NameEntry] = field(default_factory=list)
-    suri_numbers: list[int] = field(default_factory=list)
+    suri_numbers_list: list[list[int]] = field(default_factory=list)
 
 
 # ---------------------------------------------------------------------------
@@ -196,7 +196,7 @@ def _parse_saju_table(saju_html: str) -> SajuData:
     return saju
 
 
-def _extract_suri_numbers(rows: list[str]) -> list[int]:
+def _extract_suri_numbers(rows: list[str], name_count: int) -> list[list[int]]:
     def _clean(s: str) -> str:
         return re.sub(r"<[^>]+>", "", s).strip().replace("&nbsp;", "")
 
@@ -209,12 +209,15 @@ def _extract_suri_numbers(rows: list[str]) -> list[int]:
         text = _clean(tds[td_idx])
         return int(text) if text.isdigit() else 0
 
-    ingyeok = _get_num(2, 2)
-    oegyeok = _get_num(3, 0)
-    jigyeok = _get_num(4, 2)
-    chonggyeok = _get_num(6, 1)
-
-    return [jigyeok, ingyeok, oegyeok, chonggyeok]
+    result: list[list[int]] = []
+    for i in range(name_count):
+        offset = i * 4
+        ingyeok = _get_num(2, 2 + offset)
+        oegyeok = _get_num(3, 0 + offset)
+        jigyeok = _get_num(4, 2 + offset)
+        chonggyeok = _get_num(6, 1 + offset)
+        result.append([jigyeok, ingyeok, oegyeok, chonggyeok])
+    return result
 
 
 def _parse_name_rows(page_html: str) -> tuple[list[NameEntry], list[int]]:
@@ -224,8 +227,6 @@ def _parse_name_rows(page_html: str) -> tuple[list[NameEntry], list[int]]:
     after_saju = page_html[inner_end + len("</table>"):]
 
     rows = re.findall(r"<tr>\s*(.*?)\s*</tr>", after_saju, re.DOTALL)
-
-    suri_numbers = _extract_suri_numbers(rows)
 
     surnames: list[NameChar] = []
     first_chars: list[NameChar] = []
@@ -285,11 +286,21 @@ def _parse_name_rows(page_html: str) -> tuple[list[NameEntry], list[int]]:
             second_char=second_chars[idx],
         ))
 
-    return names, suri_numbers
+    suri_numbers_list = _extract_suri_numbers(rows, len(names))
+    return names, suri_numbers_list
 
 
-def parse_html(html: str) -> tuple[SajuData, list[PageData]]:
-    """HTML 전체를 파싱하여 사주 데이터와 페이지별 이름 데이터 반환."""
+def _extract_applicant_name(html: str) -> str:
+    """HTML에서 신청자 이름 추출. '신청자 : 이름' 패턴."""
+    m = re.search(r"신청자\s*:\s*([^<]+)", html)
+    if m:
+        return m.group(1).strip()
+    return ""
+
+
+def parse_html(html: str) -> tuple[SajuData, list[PageData], str]:
+    """HTML 전체를 파싱하여 사주 데이터, 페이지별 이름 데이터, 신청자 이름 반환."""
+    applicant = _extract_applicant_name(html)
     parts = re.split(r"재?작명\s*\d*\s*[\r\n]*\s*<BR>", html, flags=re.IGNORECASE)
 
     saju = SajuData()
@@ -304,17 +315,17 @@ def parse_html(html: str) -> tuple[SajuData, list[PageData]]:
             saju = _parse_saju_table(saju_match.group(1))
 
         if saju_match:
-            names, suri_numbers = _parse_name_rows(part)
+            names, suri_numbers_list = _parse_name_rows(part)
             if names:
                 page_num += 1
                 pages.append(PageData(
                     page_number=page_num,
                     name_count=len(names),
                     names=names,
-                    suri_numbers=suri_numbers,
+                    suri_numbers_list=suri_numbers_list,
                 ))
 
-    return saju, pages
+    return saju, pages, applicant
 
 
 # ---------------------------------------------------------------------------

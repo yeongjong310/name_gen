@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(where mingw32-make:*)",
+      "Bash(where make.exe)",
+      "Read(//c/ProgramData/chocolatey/bin/**)",
+      "Read(//c/Program Files/Git/usr/bin/**)"
+    ]
+  }
+}
