@@ -270,6 +270,8 @@ def _parse_name_rows(page_html: str) -> tuple[list[NameEntry], list[int]]:
 
     for row_tds in name_char_rows:
         chars = _extract_chars_from_row(row_tds)
+        if not chars:
+            continue
         if not first_chars or len(first_chars) == len(surnames):
             if len(first_chars) < len(surnames):
                 first_chars.extend(chars)
@@ -279,12 +281,22 @@ def _parse_name_rows(page_html: str) -> tuple[list[NameEntry], list[int]]:
             first_chars.extend(chars)
 
     names: list[NameEntry] = []
-    for idx in range(min(len(surnames), len(first_chars), len(second_chars))):
-        names.append(NameEntry(
-            surname=surnames[idx],
-            first_char=first_chars[idx],
-            second_char=second_chars[idx],
-        ))
+    empty_char = NameChar(element="", hanja="", reading="")
+    if second_chars:
+        for idx in range(min(len(surnames), len(first_chars), len(second_chars))):
+            names.append(NameEntry(
+                surname=surnames[idx],
+                first_char=first_chars[idx],
+                second_char=second_chars[idx],
+            ))
+    else:
+        # 외자 이름: 성 + 1글자
+        for idx in range(min(len(surnames), len(first_chars))):
+            names.append(NameEntry(
+                surname=surnames[idx],
+                first_char=first_chars[idx],
+                second_char=empty_char,
+            ))
 
     suri_numbers_list = _extract_suri_numbers(rows, len(names))
     return names, suri_numbers_list

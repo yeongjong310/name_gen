@@ -12,7 +12,7 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, scrolledtext
 
 from name_gen.parser import fetch_html, parse_html
-from name_gen.word_writer import generate_docx
+from name_gen.text_writer import generate_txt
 
 CONFIG_FILE = Path.home() / ".namegen_config.json"
 
@@ -154,20 +154,16 @@ class NameGenApp:
                 return
 
             prefix = applicant if applicant else "result"
-            success = 0
-            for page in pages:
-                output_name = f"{prefix}_{page.page_number}.docx"
-                output_path = os.path.join(self.output_dir, output_name)
+            total_names = sum(p.name_count for p in pages)
+            output_name = f"{prefix}.txt"
+            output_path = os.path.join(self.output_dir, output_name)
 
-                generate_docx(page, output_path)
-                self.root.after(
-                    0, self._log,
-                    f"  [{page.page_number}/{len(pages)}] "
-                    f"이름 {page.name_count}개 → {output_name}",
-                )
-                success += 1
+            generate_txt(pages, output_path)
 
-            summary = f"\n{'=' * 40}\n완료! 성공: {success}건"
+            summary = (
+                f"총 {total_names}개 이름 → {output_name}\n"
+                f"{'=' * 40}\n완료!"
+            )
             self.root.after(0, self._log, summary)
 
         except Exception as e:
